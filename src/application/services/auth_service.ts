@@ -56,7 +56,6 @@ export class AuthService {
     }
 
     async validateSession(sessionId: SessionId): Promise<User | null> {
-        console.log(132);
         const session = await this.sessionRepository.findById(sessionId);
         if (!session) {
             return null;

@@ -56,10 +56,10 @@ export const authRoutes = (authService: AuthService) =>
                 }),
             }
         )
-        .get('/logout', async ({ cookie: { session }, set }) => {
+        .get('/logout', async ({ cookie: { session }, redirect }) => {
             if (session.value) {
                 await authService.logout(session.value as SessionId);
                 session.remove();
             }
-            set.redirect = '/auth/login';
+            return redirect('/auth/login');
         });
