@@ -23,8 +23,12 @@ export class AuthService {
             createdAt: new Date(),
         };
 
-        await this.userRepository.create(user);
-        return user;
+        try {
+            await this.userRepository.create(user);
+            return user;
+        } catch (error) {
+            throw error;
+        }
     }
 
     async login(dto: LoginDTO): Promise<Session> {
@@ -40,7 +44,7 @@ export class AuthService {
 
         const sessionId = randomBytes(32).toString('hex') as SessionId;
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        
+
         const session: Session = {
             id: sessionId,
             userId: user.id,
@@ -52,6 +56,7 @@ export class AuthService {
     }
 
     async validateSession(sessionId: SessionId): Promise<User | null> {
+        console.log(132);
         const session = await this.sessionRepository.findById(sessionId);
         if (!session) {
             return null;

@@ -15,13 +15,17 @@ export class SqliteSessionRepository implements SessionRepository {
     }
 
     async findById(id: SessionId): Promise<Session | null> {
-        const result = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
-        if (result.length === 0) return null;
-        return {
-            id: result[0].id as SessionId,
-            userId: result[0].userId as UserId,
-            expiresAt: result[0].expiresAt,
-        };
+        try {
+            const result = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+            if (result.length === 0) return null;
+            return {
+                id: result[0].id as SessionId,
+                userId: result[0].userId as UserId,
+                expiresAt: result[0].expiresAt,
+            };
+        } catch (error: any) {
+            return null;
+        }
     }
 
     async delete(id: SessionId): Promise<void> {

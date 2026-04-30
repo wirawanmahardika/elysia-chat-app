@@ -8,16 +8,20 @@ import { html } from '@elysiajs/html';
 
 export const chatRoutes = (authService: AuthService, chatService: ChatService) =>
     new Elysia().use(html()).get('/', async ({ redirect, cookie: { session }, set, html }) => {
-        if (!session.value) {
-            return redirect('/auth/login');
-        }
+        try {
+            if (!session.value) {
+                return redirect('/auth/login');
+            }
 
-        const user = await authService.validateSession(session.value as SessionId);
-        if (!user) {
-            session.remove();
-            return redirect('/auth/login');
-        }
+            const user = await authService.validateSession(session.value as SessionId);
+            if (!user) {
+                session.remove();
+                return redirect('/auth/login');
+            }
 
-        const initialMessages = await chatService.getHistory(50);
-        return html(ChatView(initialMessages, user.username));
+            const initialMessages = await chatService.getHistory(50);
+            return html(ChatView(initialMessages, user.username));
+        } catch (error) {
+            return 'hello world';
+        }
     });

@@ -31,8 +31,8 @@ const chatService = new ChatService(messageRepository, pubSubService);
 const app = new Elysia({
     cookie: {
         secrets: env.COOKIE_SECRET,
-        sign: ['session']
-    }
+        sign: ['session'],
+    },
 })
     .use(html())
     .use(authRoutes(authService))

@@ -7,12 +7,16 @@ import type { UserId } from '../../domain/types';
 
 export class SqliteUserRepository implements UserRepository {
     async create(user: User): Promise<void> {
-        await db.insert(users).values({
-            id: user.id,
-            username: user.username,
-            passwordHash: user.passwordHash,
-            createdAt: user.createdAt,
-        });
+        try {
+            await db.insert(users).values({
+                id: user.id,
+                username: user.username,
+                passwordHash: user.passwordHash,
+                createdAt: user.createdAt,
+            });
+        } catch (error) {
+            throw Error('Failed to create user, something went wrong');
+        }
     }
 
     async findById(id: UserId): Promise<User | null> {
@@ -27,13 +31,21 @@ export class SqliteUserRepository implements UserRepository {
     }
 
     async findByUsername(username: string): Promise<User | null> {
-        const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-        if (result.length === 0) return null;
-        return {
-            id: result[0].id as UserId,
-            username: result[0].username,
-            passwordHash: result[0].passwordHash,
-            createdAt: result[0].createdAt,
-        };
+        try {
+            const result = await db
+                .select()
+                .from(users)
+                .where(eq(users.username, username))
+                .limit(1);
+            if (result.length === 0) return null;
+            return {
+                id: result[0].id as UserId,
+                username: result[0].username,
+                passwordHash: result[0].passwordHash,
+                createdAt: result[0].createdAt,
+            };
+        } catch (error) {
+            return null;
+        }
     }
 }

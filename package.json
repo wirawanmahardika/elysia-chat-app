@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@elysiajs/html": "^1.4.2",
+    "@libsql/client": "^0.17.3",
     "drizzle-orm": "^0.45.2",
     "elysia": "latest",
     "zod": "^4.3.6"
