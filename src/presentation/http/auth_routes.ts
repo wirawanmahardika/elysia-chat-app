@@ -1,17 +1,16 @@
 import { Elysia, t } from 'elysia';
 import type { AuthService } from '../../application/services/auth_service';
-import { LoginView, RegisterView } from '../views/login';
+import { LoginPage, LoginView, RegisterView } from '../views/login';
 import type { SessionId } from '../../domain/types';
-
-import { html } from '@elysiajs/html';
+import { html, Html } from '@elysiajs/html';
 
 export const authRoutes = (authService: AuthService) =>
     new Elysia({ prefix: '/auth' })
         .use(html())
-        .get('/login', ({ html }) => html(LoginView()))
+        .get('/login', () => LoginPage())
         .post(
             '/login',
-            async ({ body, redirect, cookie: { session }, html, set }) => {
+            async ({ body, set, cookie: { session } }) => {
                 try {
                     const { username, password } = body;
                     const newSession = await authService.login({ username, password });
@@ -24,10 +23,11 @@ export const authRoutes = (authService: AuthService) =>
                         expires: newSession.expiresAt,
                         path: '/',
                     });
-
-                    return redirect('/');
+                    set.headers['HX-Redirect'] = '/';
                 } catch (error: any) {
-                    return html(LoginView(error.message));
+                    return `<div class="alert alert-error">
+                        <span>${error}</span>
+                    </div>`;
                 }
             },
             {
@@ -37,16 +37,16 @@ export const authRoutes = (authService: AuthService) =>
                 }),
             }
         )
-        .get('/register', ({ html }) => html(RegisterView()))
+        .get('/register', () => RegisterView())
         .post(
             '/register',
-            async ({ redirect, body, html, set }) => {
+            async ({ redirect, body, set }) => {
                 try {
                     const { username, password } = body;
                     await authService.register({ username, password });
                     return redirect('/');
                 } catch (error: any) {
-                    return html(RegisterView(error.message));
+                    return RegisterView(error.message);
                 }
             },
             {

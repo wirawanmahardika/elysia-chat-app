@@ -1,13 +1,13 @@
 import { Elysia } from 'elysia';
 import type { AuthService } from '../../application/services/auth_service';
 import type { ChatService } from '../../application/services/chat_service';
-import { ChatView } from '../views/chat';
+import { ChatPage } from '../views/chat';
 import type { SessionId } from '../../domain/types';
 
 import { html } from '@elysiajs/html';
 
 export const chatRoutes = (authService: AuthService, chatService: ChatService) =>
-    new Elysia().use(html()).get('/', async ({ redirect, cookie: { session }, set, html }) => {
+    new Elysia().use(html()).get('/', async ({ redirect, cookie: { session } }) => {
         try {
             if (!session.value) {
                 return redirect('/auth/login');
@@ -18,10 +18,9 @@ export const chatRoutes = (authService: AuthService, chatService: ChatService) =
                 session.remove();
                 return redirect('/auth/login');
             }
-
             const initialMessages = await chatService.getHistory(50);
-            return html(ChatView(initialMessages, user.username));
+            return ChatPage(initialMessages, user.username);
         } catch (error) {
-            return 'hello world';
+            return new Response(null, { status: 500 });
         }
     });

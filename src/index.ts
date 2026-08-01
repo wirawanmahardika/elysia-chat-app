@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia';
+import { staticPlugin } from '@elysia/static';
 import { html } from '@elysiajs/html';
 import { env } from './config/env';
 
@@ -10,12 +11,12 @@ import { SqliteMessageRepository } from './infrastructure/repositories/sqlite_me
 // Services
 import { AuthService } from './application/services/auth_service';
 import { ChatService } from './application/services/chat_service';
-import { PubSubService } from './application/services/pubsub_service';
 
 // Routes
 import { authRoutes } from './presentation/http/auth_routes';
 import { chatRoutes } from './presentation/http/chat_routes';
 import { chatSocket } from './presentation/ws/chat_socket';
+import { UserService } from './application/services/user_service';
 
 // Initialize Repositories
 const userRepository = new SqliteUserRepository();
@@ -24,8 +25,8 @@ const messageRepository = new SqliteMessageRepository();
 
 // Initialize Services
 const authService = new AuthService(userRepository, sessionRepository);
-const pubSubService = new PubSubService();
-const chatService = new ChatService(messageRepository, pubSubService);
+const chatService = new ChatService(messageRepository);
+const userService = new UserService(userRepository);
 
 // Initialize App
 const app = new Elysia({
@@ -35,9 +36,13 @@ const app = new Elysia({
     },
 })
     .use(html())
+    .use(staticPlugin())
     .use(authRoutes(authService))
     .use(chatRoutes(authService, chatService))
-    .use(chatSocket(authService, chatService, pubSubService))
+    .use(chatSocket(authService, userService))
+    .post('/something', () => {
+        return 'hello world';
+    })
     .listen(env.PORT);
 
 console.log(`🦊 Chatify server is running at http://${app.server?.hostname}:${app.server?.port}`);

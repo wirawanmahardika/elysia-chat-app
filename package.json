@@ -1,21 +1,30 @@
 {
-  "name": "chatify",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "@elysiajs/html": "^1.4.2",
-    "@libsql/client": "^0.17.3",
-    "drizzle-orm": "^0.45.2",
-    "elysia": "latest",
-    "zod": "^4.4.1"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.13",
-    "bun-types": "latest",
-    "drizzle-kit": "^0.31.10"
-  },
-  "module": "src/index.js"
+    "name": "chatify",
+    "version": "1.0.50",
+    "scripts": {
+        "test": "bunx @tailwindcss/cli -i ./public/input.css -o ./public/style.css --watch",
+        "dev": "bun run --watch src/index.ts"
+    },
+    "dependencies": {
+        "@elysia/static": "^1.4.11",
+        "@elysiajs/html": "^1.4.2",
+        "@kitajs/html": "^4.2.13",
+        "@libsql/client": "^0.17.4",
+        "@tailwindcss/cli": "^4.3.3",
+        "drizzle-orm": "^0.45.2",
+        "elysia": "^1.4.29",
+        "tailwindcss": "^4.3.3",
+        "zod": "^4.4.3"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "bun-types": "^1.3.14",
+        "daisyui": "^5.7.9",
+        "drizzle-kit": "^0.31.10"
+    },
+    "module": "src/index.js",
+    "overrides": {
+        "ws": "^8.20.1",
+        "esbuild": "^0.25.0"
+    }
 }
