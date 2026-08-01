@@ -1,6 +1,7 @@
 {
     "name": "chatify",
     "version": "1.0.50",
+    "module": "src/index.ts",
     "scripts": {
         "dev": "bun run --watch src/index.ts",
         "tailwind": "bunx @tailwindcss/cli -i ./public/input.css -o ./public/style.css --watch"
@@ -22,7 +23,6 @@
         "daisyui": "^5.7.9",
         "drizzle-kit": "^0.31.10"
     },
-    "module": "src/index.js",
     "overrides": {
         "ws": "^8.20.1",
         "esbuild": "^0.25.0"

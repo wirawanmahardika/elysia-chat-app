@@ -15,9 +15,6 @@ const app = new Elysia({
     .use(staticPlugin())
     .use(authModule)
     .use(chatModule)
-    .post('/something', () => {
-        return 'hello world';
-    })
     .listen(config.PORT);
 
 console.log(`🦊 Chatify server is running at http://${app.server?.hostname}:${app.server?.port}`);
