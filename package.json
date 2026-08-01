@@ -2,8 +2,8 @@
     "name": "chatify",
     "version": "1.0.50",
     "scripts": {
-        "test": "bunx @tailwindcss/cli -i ./public/input.css -o ./public/style.css --watch",
-        "dev": "bun run --watch src/index.ts"
+        "dev": "bun run --watch src/index.ts",
+        "tailwind": "bunx @tailwindcss/cli -i ./public/input.css -o ./public/style.css --watch"
     },
     "dependencies": {
         "@elysia/static": "^1.4.11",

@@ -43,3 +43,4 @@ package-lock.json
 **/*.bun
 
 storage/*
+public/style.css

@@ -36,13 +36,15 @@ export const authModule = new Elysia({ prefix: '/auth' })
     .get('/register', () => RegisterView())
     .post(
         '/register',
-        async ({ redirect, body }) => {
+        async ({ set, body }) => {
             try {
                 const { username, password } = body;
                 await authService.register({ username, password });
-                return redirect('/');
+                set.headers['HX-Redirect'] = '/auth/login';
             } catch (error: any) {
-                return RegisterView(error.message);
+                return `<div class="alert alert-error">
+                    <span>${error.message || error}</span>
+                </div>`;
             }
         },
         {
