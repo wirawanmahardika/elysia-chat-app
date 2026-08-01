@@ -1,5 +1,5 @@
 import { Html } from '@elysiajs/html';
-import { Layout } from './layout';
+import { Layout } from '../../shared/views/layout';
 
 export const LoginPage = () => {
     return (

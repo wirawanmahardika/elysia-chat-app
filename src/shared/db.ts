@@ -1,5 +1,8 @@
+import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { config } from '../config';
 
 export const users = sqliteTable('users', {
     id: text('id').primaryKey(), // UUID string
@@ -22,3 +25,8 @@ export const messages = sqliteTable('messages', {
 }, (table) => ({
     idx_messages_id: index('idx_messages_id').on(table.id),
 }));
+
+export const schema = { users, sessions, messages };
+
+export const sqlite = createClient({ url: config.DB_URL });
+export const db = drizzle(sqlite, { schema });
