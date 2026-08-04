@@ -174,8 +174,11 @@ export const chatModule = new Elysia()
                 }
 
                 await chatService.createMessage({ roomId, userId: user.id, content: message });
-                const response = ChatPartial(user.username, message);
+                const response = ChatPartial(false, user.username, message, roomId);
                 ws.publish(roomId, response);
+
+                const selfResponse = ChatPartial(true, user.username, message, roomId);
+                ws.send(selfResponse);
             }
         },
         close(ws) {

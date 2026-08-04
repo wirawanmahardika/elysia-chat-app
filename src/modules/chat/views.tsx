@@ -148,6 +148,7 @@ export const ChatPage = ({
                                                     </h3>
                                                 </div>
                                                 <p
+                                                    id={room.id}
                                                     class={`text-xs truncate mt-0.5 ${
                                                         isActive
                                                             ? 'text-primary-content/80'
@@ -194,9 +195,10 @@ export const ChatPage = ({
 
                                 {/* Chat Window (Scrollable Area) */}
                                 <div
-                                    id="chat-window"
+                                    id={'chat-' + activeRoomId}
                                     data-username={currentUsername}
                                     class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/40"
+                                    chat-window
                                 >
                                     {messages
                                         .slice()
@@ -223,7 +225,6 @@ export const ChatPage = ({
                                             );
                                         })}
                                 </div>
-
                                 {/* Footer / Input Form */}
                                 <form
                                     id="form"
@@ -340,13 +341,30 @@ export const ChatPage = ({
     );
 };
 
-export const ChatPartial = (username: string, content: string) => {
-    return (
-        <div id="chat-window" hx-swap-oob="beforeend">
-            <div class="chat chat-start">
+export const ChatPartial = (
+    isSelf: boolean = false,
+    username: string,
+    content: string,
+    roomId: string
+) => {
+    return isSelf ? (
+        <div id={'chat-' + roomId} hx-swap-oob="beforeend">
+            <div class="chat chat-end">
                 <div class="chat-header text-xs opacity-70 mb-1">{username}</div>
-                <div class="chat-bubble max-w-[80%] chat-bubble-neutral">{content}</div>
+                <div class="chat-bubble max-w-[80%] chat-bubble-primary">{content}</div>
             </div>
         </div>
+    ) : (
+        <>
+            <div id={'chat-' + roomId} hx-swap-oob="beforeend">
+                <div class="chat chat-start">
+                    <div class="chat-header text-xs opacity-70 mb-1">{username}</div>
+                    <div class="chat-bubble max-w-[80%] chat-bubble-neutral">{content}</div>
+                </div>
+            </div>
+            <p id={roomId} hx-swap-oob="innerHTML">
+                {content}
+            </p>
+        </>
     );
 };
