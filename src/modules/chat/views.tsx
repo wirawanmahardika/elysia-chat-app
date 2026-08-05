@@ -18,6 +18,7 @@ export const ChatPage = ({
     availableUsers,
 }: ChatPageProps) => {
     const scripts: Scripts = {
+        alpine: true,
         htmx: true,
         htmxWebSocket: true,
         customScript: [{ src: '/public/js/chatPage.js', defer: true }],
@@ -30,14 +31,18 @@ export const ChatPage = ({
 
     return (
         <Layout title={`Chat - ${activeTitle}`} script={scripts}>
-            <div class="bg-base-200 min-h-screen flex items-center justify-center p-0 md:p-4 font-sans text-base-content">
+            <div class="bg-base-200 min-h-screen flex items-center justify-center font-sans text-base-content">
                 <div
+                    x-data={`{ openMobileChat: ${activeRoomId ? 'true' : 'false'} }`}
                     hx-ext="ws"
                     ws-connect="/ws"
-                    class="w-full max-w-6xl h-screen md:h-[88vh] bg-base-100 md:rounded-2xl md:shadow-2xl flex flex-col md:flex-row border border-base-300 overflow-hidden"
+                    class="w-full h-screen bg-base-100 md:rounded-2xl md:shadow-2xl flex flex-col md:flex-row border border-base-300 overflow-hidden"
                 >
                     {/* Left Sidebar */}
-                    <div class="w-full md:w-80 lg:w-96 border-r border-base-300 flex flex-col bg-base-100 shrink-0">
+                    <div
+                        x-show="!openMobileChat"
+                        class="w-full md:w-80 lg:w-96 border-r border-base-300 flex flex-col bg-base-100 shrink-0 h-full md:flex!"
+                    >
                         {/* Profile Header */}
                         <div class="p-4 border-b border-base-300 flex justify-between items-center bg-base-200/50">
                             <div class="flex items-center gap-3">
@@ -124,6 +129,7 @@ export const ChatPage = ({
                                     return (
                                         <a
                                             href={`/room/${room.id}`}
+                                            x-on:click="openMobileChat = true"
                                             class={`flex items-center gap-3 p-3 rounded-xl transition ${
                                                 isActive
                                                     ? 'bg-primary text-primary-content shadow-md'
@@ -166,12 +172,36 @@ export const ChatPage = ({
                     </div>
 
                     {/* Right Panel - Chat Panel */}
-                    <div class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden">
+                    <div
+                        x-show="openMobileChat"
+                        class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full md:flex!"
+                    >
                         {activeRoom ? (
                             <>
                                 {/* Chat Header */}
                                 <header class="p-4 bg-base-100 border-b border-base-300 flex justify-between items-center z-10 shadow-sm">
                                     <div class="flex items-center gap-3">
+                                        {/* Back Button for Mobile */}
+                                        <button
+                                            x-on:click="openMobileChat = false"
+                                            class="btn btn-ghost btn-circle btn-sm md:hidden"
+                                            aria-label="Kembali ke daftar percakapan"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="1.5"
+                                                stroke="currentColor"
+                                                class="w-6 h-6"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                                                />
+                                            </svg>
+                                        </button>
                                         <div class="avatar placeholder">
                                             <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center font-bold">
                                                 {(activeRoom.opponentName || activeRoom.name || 'D')
@@ -196,7 +226,6 @@ export const ChatPage = ({
                                 {/* Chat Window (Scrollable Area) */}
                                 <div
                                     id={'chat-' + activeRoomId}
-                                    data-username={currentUsername}
                                     class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/40"
                                     chat-window
                                 >
@@ -262,6 +291,29 @@ export const ChatPage = ({
                             </>
                         ) : (
                             <div class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-base-200/20">
+                                {/* Back Button for Mobile Empty State */}
+                                <div class="w-full flex justify-start md:hidden mb-4">
+                                    <button
+                                        x-on:click="openMobileChat = false"
+                                        class="btn btn-ghost btn-sm gap-2"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke-width="1.5"
+                                            stroke="currentColor"
+                                            class="w-5 h-5"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                                            />
+                                        </svg>
+                                        Kembali ke daftar
+                                    </button>
+                                </div>
                                 <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
