@@ -151,34 +151,33 @@ export const chatModule = new Elysia()
             const clientState = states.get(ws.id);
             if (!clientState) return;
 
-            let payload = data;
-            if (typeof data === 'string') {
-                try {
-                    payload = JSON.parse(data);
-                } catch {
-                    payload = {};
-                }
-            }
+            switch (data.type) {
+                case 'chatting':
+                    const roomId = data?.roomId;
+                    const message = data?.message;
+                    if (!roomId || !message) return;
 
-            const roomId = payload?.roomId;
-            const message = payload?.message;
+                    const user = clientState.user;
 
-            if (roomId && message) {
-                const user = clientState.user;
-                const isMember = await chatService.isUserInRoom(user.id, roomId);
-                if (!isMember) return;
+                    const isMember = await chatService.isUserInRoom(user.id, roomId);
+                    if (!isMember) return;
 
-                if (!clientState.subscribedRooms.has(roomId)) {
-                    ws.subscribe(roomId);
-                    clientState.subscribedRooms.add(roomId);
-                }
+                    if (!clientState.subscribedRooms.has(roomId)) {
+                        ws.subscribe(roomId);
+                        clientState.subscribedRooms.add(roomId);
+                    }
 
-                await chatService.createMessage({ roomId, userId: user.id, content: message });
-                const response = ChatPartial(false, user.username, message, roomId);
-                ws.publish(roomId, response);
+                    await chatService.createMessage({
+                        roomId,
+                        userId: user.id,
+                        content: message,
+                    });
 
-                const selfResponse = ChatPartial(true, user.username, message, roomId);
-                ws.send(selfResponse);
+                    const response = ChatPartial(false, user.username, message, roomId);
+                    ws.publish(roomId, response);
+                    const selfResponse = ChatPartial(true, user.username, message, roomId);
+                    ws.send(selfResponse);
+                    return;
             }
         },
         close(ws) {

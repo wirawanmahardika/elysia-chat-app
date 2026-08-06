@@ -17,6 +17,7 @@ export const ChatPage = ({
     currentUsername,
     availableUsers,
 }: ChatPageProps) => {
+    const activeRoom = userRooms.find((r) => r.id === activeRoomId);
     const scripts: Scripts = {
         alpine: true,
         htmx: true,
@@ -24,13 +25,8 @@ export const ChatPage = ({
         customScript: [{ src: '/public/js/chatPage.js', defer: true }],
     };
 
-    const activeRoom = userRooms.find((r) => r.id === activeRoomId);
-    const activeTitle = activeRoom
-        ? activeRoom.opponentName || activeRoom.name || 'Obrolan'
-        : 'Chatify';
-
     return (
-        <Layout title={`Chat - ${activeTitle}`} script={scripts}>
+        <Layout title="Obrolan" script={scripts}>
             <div class="bg-base-200 min-h-screen flex items-center justify-center font-sans text-base-content">
                 <div
                     x-data={`{ openMobileChat: ${activeRoomId ? 'true' : 'false'} }`}
@@ -260,6 +256,7 @@ export const ChatPage = ({
                                     class="p-4 bg-base-100 border-t border-base-300 flex gap-2 items-center"
                                     ws-send
                                 >
+                                    <input type="hidden" name="type" value="chatting" />
                                     <input type="hidden" name="roomId" value={activeRoom.id} />
                                     <input
                                         id="input-message"
