@@ -399,23 +399,20 @@ export const ChatPartial = (
     content: string,
     roomId: string
 ) => {
-    return isSelf ? (
-        <div id={'chat-' + roomId} hx-swap-oob="beforeend">
-            <div class="chat chat-end">
-                <div class="chat-header text-xs opacity-70 mb-1">{username}</div>
-                <div class="chat-bubble max-w-[80%] chat-bubble-primary">{content}</div>
-            </div>
-        </div>
-    ) : (
+    return (
         <>
             <div id={'chat-' + roomId} hx-swap-oob="beforeend">
-                <div class="chat chat-start">
+                <div class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}>
                     <div class="chat-header text-xs opacity-70 mb-1">{username}</div>
-                    <div class="chat-bubble max-w-[80%] chat-bubble-neutral">{content}</div>
+                    <div
+                        class={`chat-bubble max-w-[80%] ${isSelf ? 'chat-bubble-primary' : 'chat-bubble-neutral'} `}
+                    >
+                        {content}
+                    </div>
                 </div>
             </div>
             <p id={roomId} hx-swap-oob="innerHTML">
-                {content}
+                {isSelf ? 'You' : username}: {content}
             </p>
         </>
     );
