@@ -20,7 +20,7 @@ function scrollToBottom() {
 
 document.body.addEventListener('htmx:wsAfterSend', function () {
     const inputMessage = document.getElementById('input-message');
-    inputMessage.value = '';
+    if (inputMessage) inputMessage.value = '';
 });
 
 document.addEventListener('DOMContentLoaded', scrollToBottom);

@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { html } from '@elysiajs/html';
 import { authService } from '../auth/service';
 import { chatService } from './service';
-import { ChatPage, ChatPartial } from './views';
+import { ChatPage, ChatPanel, ChatPartial } from './views';
 import type { User } from '../auth/model';
 
 interface WSClientState {
@@ -31,11 +31,8 @@ export const chatModule = new Elysia()
 
             if (userRooms.length > 0) {
                 const activeRoomId = userRooms[0].id;
-                const initialMessages = await chatService.getRoomHistory(activeRoomId, 50);
                 return ChatPage({
                     userRooms,
-                    activeRoomId,
-                    messages: initialMessages,
                     currentUsername: user.username,
                     availableUsers,
                 });
@@ -43,8 +40,6 @@ export const chatModule = new Elysia()
 
             return ChatPage({
                 userRooms: [],
-                activeRoomId: null,
-                messages: [],
                 currentUsername: user.username,
                 availableUsers,
             });
@@ -70,13 +65,10 @@ export const chatModule = new Elysia()
             }
 
             const userRooms = await chatService.getUserRooms(user.id);
-            const initialMessages = await chatService.getRoomHistory(roomId, 50);
             const availableUsers = await chatService.getAllOtherUsers(user.id);
 
             return ChatPage({
                 userRooms,
-                activeRoomId: roomId,
-                messages: initialMessages,
                 currentUsername: user.username,
                 availableUsers,
             });
@@ -151,17 +143,31 @@ export const chatModule = new Elysia()
             const clientState = states.get(ws.id);
             if (!clientState) return;
 
+            const roomId = data?.roomId;
+            const message = data?.message;
+            const user = clientState.user;
+
             switch (data.type) {
+                case 'room':
+                    const initialMessages = await chatService.getRoomHistory(roomId, 50);
+                    const roomAndOpponent = await chatService.getRoomAndOpponent(roomId, user.id);
+
+                    const roomResponse = ChatPanel({
+                        messages: initialMessages,
+                        username: user.username,
+                        room: {
+                            id: roomAndOpponent?.id || '',
+                            name: roomAndOpponent?.name || '',
+                            opponentName: roomAndOpponent?.opponentName || '',
+                        },
+                    });
+
+                    ws.send(roomResponse);
+                    break;
                 case 'chatting':
-                    const roomId = data?.roomId;
-                    const message = data?.message;
                     if (!roomId || !message) return;
-
-                    const user = clientState.user;
-
                     const isMember = await chatService.isUserInRoom(user.id, roomId);
                     if (!isMember) return;
-
                     if (!clientState.subscribedRooms.has(roomId)) {
                         ws.subscribe(roomId);
                         clientState.subscribedRooms.add(roomId);
@@ -177,7 +183,7 @@ export const chatModule = new Elysia()
                     ws.publish(roomId, response);
                     const selfResponse = ChatPartial(true, user.username, message, roomId);
                     ws.send(selfResponse);
-                    return;
+                    break;
             }
         },
         close(ws) {

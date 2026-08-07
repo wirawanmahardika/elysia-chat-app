@@ -4,20 +4,12 @@ import { Layout, Scripts } from '../../shared/views/layout';
 
 interface ChatPageProps {
     userRooms: RoomWithDetails[];
-    activeRoomId: string | null;
-    messages: MessageWithUser[];
+    // messages: MessageWithUser[];
     currentUsername: string;
     availableUsers: { id: string; username: string }[];
 }
 
-export const ChatPage = ({
-    userRooms,
-    activeRoomId,
-    messages,
-    currentUsername,
-    availableUsers,
-}: ChatPageProps) => {
-    const activeRoom = userRooms.find((r) => r.id === activeRoomId);
+export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPageProps) => {
     const scripts: Scripts = {
         alpine: true,
         htmx: true,
@@ -29,16 +21,13 @@ export const ChatPage = ({
         <Layout title="Obrolan" script={scripts}>
             <div class="bg-base-200 min-h-screen flex items-center justify-center font-sans text-base-content">
                 <div
-                    x-data={`{ openMobileChat: ${activeRoomId ? 'true' : 'false'} }`}
+                    x-data={`{ activeRoomId: null }`}
                     hx-ext="ws"
                     ws-connect="/ws"
                     class="w-full h-screen bg-base-100 md:rounded-2xl md:shadow-2xl flex flex-col md:flex-row border border-base-300 overflow-hidden"
                 >
                     {/* Left Sidebar */}
-                    <div
-                        x-show="!openMobileChat"
-                        class="w-full md:w-80 lg:w-96 border-r border-base-300 flex flex-col bg-base-100 shrink-0 h-full md:flex!"
-                    >
+                    <div class="w-full md:w-80 lg:w-96 border-r border-base-300 flex flex-col bg-base-100 shrink-0 h-full md:flex!">
                         {/* Profile Header */}
                         <div class="p-4 border-b border-base-300 flex justify-between items-center bg-base-200/50">
                             <div class="flex items-center gap-3">
@@ -114,7 +103,6 @@ export const ChatPage = ({
                                 </div>
                             ) : (
                                 userRooms.map((room) => {
-                                    const isActive = room.id === activeRoomId;
                                     const title =
                                         room.opponentName || room.name || 'Direct Message';
                                     const initial = title.charAt(0).toUpperCase();
@@ -123,44 +111,36 @@ export const ChatPage = ({
                                         : 'Belum ada pesan';
 
                                     return (
-                                        <a
-                                            href={`/room/${room.id}`}
-                                            x-on:click="openMobileChat = true"
-                                            class={`flex items-center gap-3 p-3 rounded-xl transition ${
-                                                isActive
-                                                    ? 'bg-primary text-primary-content shadow-md'
-                                                    : 'hover:bg-base-200 text-base-content'
-                                            }`}
+                                        <button
+                                            ws-send
+                                            hx-vals={`{"type": "room", "roomId": "${room.id}"}`}
+                                            x-on:click={`activeRoomId = '${room.id}'`}
+                                            x-bind:class={`activeRoomId === '${room.id}' ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-base-200 text-base-content'`}
+                                            class="flex items-center gap-3 p-3 rounded-xl transition w-full"
                                         >
                                             <div class="avatar placeholder shrink-0">
                                                 <div
-                                                    class={`rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm ${
-                                                        isActive
-                                                            ? 'bg-primary-content text-primary'
-                                                            : 'bg-neutral text-neutral-content'
-                                                    }`}
+                                                    x-bind:class={`activeRoomId === '${room.id}' ? 'bg-primary-content text-primary' : 'bg-neutral text-neutral-content'`}
+                                                    class={`rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm`}
                                                 >
                                                     {initial}
                                                 </div>
                                             </div>
                                             <div class="flex-1 min-w-0">
-                                                <div class="flex justify-between items-baseline">
+                                                <div class="flex justify-between items-baseline flex-col ">
                                                     <h3 class="font-semibold text-sm truncate">
                                                         {title}
                                                     </h3>
+                                                    <p
+                                                        id={room.id}
+                                                        x-bind:class={`activeRoomId === '${room.id}' ? 'text-primary-content/80' : 'text-base-content/60'`}
+                                                        class="text-xs truncate mt-0.5 text-left"
+                                                    >
+                                                        {lastMsg}
+                                                    </p>
                                                 </div>
-                                                <p
-                                                    id={room.id}
-                                                    class={`text-xs truncate mt-0.5 ${
-                                                        isActive
-                                                            ? 'text-primary-content/80'
-                                                            : 'text-base-content/60'
-                                                    }`}
-                                                >
-                                                    {lastMsg}
-                                                </p>
                                             </div>
-                                        </a>
+                                        </button>
                                     );
                                 })
                             )}
@@ -169,177 +149,35 @@ export const ChatPage = ({
 
                     {/* Right Panel - Chat Panel */}
                     <div
-                        x-show="openMobileChat"
-                        class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full md:flex!"
+                        id="chat-panel"
+                        class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full empty:hidden"
                     >
-                        {activeRoom ? (
-                            <>
-                                {/* Chat Header */}
-                                <header class="p-4 bg-base-100 border-b border-base-300 flex justify-between items-center z-10 shadow-sm">
-                                    <div class="flex items-center gap-3">
-                                        {/* Back Button for Mobile */}
-                                        <button
-                                            x-on:click="openMobileChat = false"
-                                            class="btn btn-ghost btn-circle btn-sm md:hidden"
-                                            aria-label="Kembali ke daftar percakapan"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="1.5"
-                                                stroke="currentColor"
-                                                class="w-6 h-6"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-                                                />
-                                            </svg>
-                                        </button>
-                                        <div class="avatar placeholder">
-                                            <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center font-bold">
-                                                {(activeRoom.opponentName || activeRoom.name || 'D')
-                                                    .charAt(0)
-                                                    .toUpperCase()}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <h1 class="font-bold text-base leading-tight">
-                                                {activeRoom.opponentName ||
-                                                    activeRoom.name ||
-                                                    'Direct Message'}
-                                            </h1>
-                                            <span class="text-xs text-success flex items-center gap-1 mt-0.5">
-                                                <span class="w-2 h-2 rounded-full bg-success inline-block"></span>{' '}
-                                                Direct Chat
-                                            </span>
-                                        </div>
-                                    </div>
-                                </header>
-
-                                {/* Chat Window (Scrollable Area) */}
-                                <div
-                                    id={'chat-' + activeRoomId}
-                                    class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/40"
-                                    chat-window
+                        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-base-200/20">
+                            <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="w-8 h-8"
                                 >
-                                    {messages
-                                        .slice()
-                                        .reverse()
-                                        .map((m) => {
-                                            const isSelf = m.username === currentUsername;
-                                            return (
-                                                <div
-                                                    class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}
-                                                >
-                                                    <div class="chat-header text-xs opacity-70 mb-1">
-                                                        {m.username}
-                                                    </div>
-                                                    <div
-                                                        class={`chat-bubble max-w-[80%] ${
-                                                            isSelf
-                                                                ? 'chat-bubble-primary'
-                                                                : 'chat-bubble-neutral'
-                                                        }`}
-                                                    >
-                                                        {m.content}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                </div>
-                                {/* Footer / Input Form */}
-                                <form
-                                    id="form"
-                                    class="p-4 bg-base-100 border-t border-base-300 flex gap-2 items-center"
-                                    ws-send
-                                >
-                                    <input type="hidden" name="type" value="chatting" />
-                                    <input type="hidden" name="roomId" value={activeRoom.id} />
-                                    <input
-                                        id="input-message"
-                                        type="text"
-                                        name="message"
-                                        class="input input-bordered input-primary flex-1 focus:outline-none"
-                                        autocomplete="off"
-                                        required
-                                        placeholder="Tulis pesan..."
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-1.074-.85l1.052-3.76-A8.967 8.967 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
                                     />
-                                    <button type="submit" class="btn btn-primary px-6">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="1.5"
-                                            stroke="currentColor"
-                                            class="w-5 h-5"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                                            />
-                                        </svg>
-                                        Kirim
-                                    </button>
-                                </form>
-                            </>
-                        ) : (
-                            <div class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-base-200/20">
-                                {/* Back Button for Mobile Empty State */}
-                                <div class="w-full flex justify-start md:hidden mb-4">
-                                    <button
-                                        x-on:click="openMobileChat = false"
-                                        class="btn btn-ghost btn-sm gap-2"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="1.5"
-                                            stroke="currentColor"
-                                            class="w-5 h-5"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-                                            />
-                                        </svg>
-                                        Kembali ke daftar
-                                    </button>
-                                </div>
-                                <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="w-8 h-8"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-1.074-.85l1.052-3.76-A8.967 8.967 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                                        />
-                                    </svg>
-                                </div>
-                                <h2 class="text-xl font-bold mb-2">Selamat Datang di Chatify</h2>
-                                <p class="text-base-content/60 max-w-sm mb-6 text-sm">
-                                    Pilih percakapan dari sidebar di sebelah kiri atau buat obrolan
-                                    baru untuk mulai berkomunikasi secara privat.
-                                </p>
-                                <button
-                                    onclick="new_chat_modal.showModal()"
-                                    class="btn btn-primary"
-                                >
-                                    Mulai Obrolan Baru
-                                </button>
+                                </svg>
                             </div>
-                        )}
+                            <h2 class="text-xl font-bold mb-2">Selamat Datang di Chatify</h2>
+                            <p class="text-base-content/60 max-w-sm mb-6 text-sm">
+                                Pilih percakapan dari sidebar di sebelah kiri atau buat obrolan baru
+                                untuk mulai berkomunikasi secara privat.
+                            </p>
+                            <button onclick="new_chat_modal.showModal()" class="btn btn-primary">
+                                Mulai Obrolan Baru
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -412,5 +250,128 @@ export const ChatPartial = (
                 {isSelf ? 'You' : username}: {content}
             </p>
         </>
+    );
+};
+
+export const ChatPanel = ({
+    username,
+    messages,
+    room,
+}: {
+    username: string;
+    messages: MessageWithUser[];
+    room: {
+        id: string;
+        name: string;
+        opponentName: string;
+    };
+}) => {
+    return (
+        <div
+            id={'chat-panel'}
+            class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full empty:hidden fixed md:static"
+        >
+            {/* Chat Header */}
+            <header class="p-4 bg-base-100 border-b border-base-300 flex justify-between items-center z-10 shadow-sm">
+                <div class="flex items-center gap-3">
+                    {/* Back Button for Mobile */}
+                    <button
+                        x-on:click="document.getElementById('chat-panel').innerHTML = ''"
+                        class="btn btn-ghost btn-circle btn-sm md:hidden"
+                        aria-label="Kembali ke daftar percakapan"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="w-6 h-6"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                            />
+                        </svg>
+                    </button>
+                    <div class="avatar placeholder">
+                        <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center font-bold">
+                            {(room.opponentName || room.name || 'D').charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base leading-tight">
+                            {room.opponentName || room.name || 'Direct Message'}
+                        </h1>
+                        <span class="text-xs text-success flex items-center gap-1 mt-0.5">
+                            <span class="w-2 h-2 rounded-full bg-success inline-block"></span>{' '}
+                            Direct Chat
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            {/* Chat Window (Scrollable Area) */}
+            <div
+                id={'chat-' + room.id}
+                class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/40"
+                chat-window
+            >
+                {messages
+                    .slice()
+                    .reverse()
+                    .map((m) => {
+                        const isSelf = m.username === username;
+                        return (
+                            <div class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}>
+                                <div class="chat-header text-xs opacity-70 mb-1">{m.username}</div>
+                                <div
+                                    class={`chat-bubble max-w-[80%] ${
+                                        isSelf ? 'chat-bubble-primary' : 'chat-bubble-neutral'
+                                    }`}
+                                >
+                                    {m.content}
+                                </div>
+                            </div>
+                        );
+                    })}
+            </div>
+            {/* Footer / Input Form */}
+            <form
+                id="form"
+                class="p-4 bg-base-100 border-t border-base-300 flex gap-2 items-center"
+                ws-send
+            >
+                <input type="hidden" name="type" value="chatting" />
+                <input type="hidden" name="roomId" value={room.id} />
+                <input
+                    id="input-message"
+                    type="text"
+                    name="message"
+                    class="input input-bordered input-primary flex-1 focus:outline-none"
+                    autocomplete="off"
+                    required
+                    placeholder="Tulis pesan..."
+                />
+                <button type="submit" class="btn btn-primary px-6">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-5 h-5"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                        />
+                    </svg>
+                    Kirim
+                </button>
+            </form>
+        </div>
     );
 };

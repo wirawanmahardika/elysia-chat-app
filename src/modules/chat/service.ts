@@ -102,7 +102,11 @@ export class ChatService {
         return result;
     }
 
-    async getRoomHistory(roomId: string, limit: number = 50, cursorId?: number): Promise<MessageWithUser[]> {
+    async getRoomHistory(
+        roomId: string,
+        limit: number = 50,
+        cursorId?: number
+    ): Promise<MessageWithUser[]> {
         let query = db
             .select({
                 id: messages.id,
@@ -134,7 +138,11 @@ export class ChatService {
         }));
     }
 
-    async createMessage(data: { roomId: string; userId: string; content: string }): Promise<Message> {
+    async createMessage(data: {
+        roomId: string;
+        userId: string;
+        content: string;
+    }): Promise<Message> {
         const result = await db
             .insert(messages)
             .values({
@@ -170,6 +178,26 @@ export class ChatService {
             .from(users)
             .where(ne(users.id, currentUserId))
             .orderBy(users.username);
+    }
+
+    async getRoomAndOpponent(roomId: string, userId: string) {
+        const [result] = await db
+            .select({
+                id: rooms.id,
+                name: rooms.name,
+                opponentName: users.username,
+            })
+            .from(rooms)
+            .innerJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
+            .innerJoin(users, eq(users.id, roomMembers.userId))
+            .where(and(eq(rooms.id, roomId), ne(users.id, userId)))
+            .limit(1);
+
+        if (!result) {
+            return null; // Atau lempar error sesuai skenario penanganan aplikasi
+        }
+
+        return result;
     }
 }
 
