@@ -237,7 +237,8 @@ export const ChatPartial = (
     isSelf: boolean = false,
     username: string,
     content: string,
-    roomId: string
+    roomId: string,
+    createdAt: Date
 ) => {
     return (
         <>
@@ -249,6 +250,11 @@ export const ChatPartial = (
                     >
                         {content}
                     </div>
+                    <div
+                        x-data={`{ time: '${createdAt.toISOString()}'} `}
+                        x-text="formatChatTime(time)"
+                        class="chat-footer opacity-70 text-xs"
+                    ></div>
                 </div>
             </div>
             <p id={roomId} hx-swap-oob="innerHTML">
@@ -279,6 +285,11 @@ export const Chats = (
                         >
                             {m.content}
                         </div>
+                        <div
+                            x-data={`{ time: '${m.createdAt.toISOString()}'} `}
+                            x-text="formatChatTime(time)"
+                            class="chat-footer opacity-70 text-xs"
+                        ></div>
                     </div>
                 );
             })}
@@ -388,6 +399,11 @@ export const ChatPanel = ({
                                 >
                                     {m.content}
                                 </div>
+                                <div
+                                    x-data={`{ time: '${m.createdAt.toISOString()}'} `}
+                                    x-text="formatChatTime(time)"
+                                    class="chat-footer opacity-70 text-xs"
+                                ></div>
                             </div>
                         );
                     })}

@@ -184,15 +184,21 @@ export const chatModule = new Elysia()
                         clientState.subscribedRooms.add(roomId);
                     }
 
-                    await chatService.createMessage({
+                    const { createdAt } = await chatService.createMessage({
                         roomId,
                         userId: user.id,
                         content: message,
                     });
 
-                    const response = ChatPartial(false, user.username, message, roomId);
+                    const response = ChatPartial(false, user.username, message, roomId, createdAt);
                     ws.publish(roomId, response);
-                    const selfResponse = ChatPartial(true, user.username, message, roomId);
+                    const selfResponse = ChatPartial(
+                        true,
+                        user.username,
+                        message,
+                        roomId,
+                        createdAt
+                    );
                     ws.send(selfResponse);
                     break;
             }
