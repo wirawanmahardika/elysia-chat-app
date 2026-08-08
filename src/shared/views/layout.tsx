@@ -12,15 +12,16 @@ export interface Scripts {
     customScript?: customScriptType[];
 }
 
-interface LayoutArgument {
+interface LayoutArgs {
     title: string;
     script?: Scripts;
+    class: string;
     children: any;
 }
 
-export const Layout = (data: LayoutArgument) => {
+export const Layout = (data: LayoutArgs) => {
     return (
-        <html lang="en">
+        <html lang="en" data-theme="dark">
             <head>
                 <meta charset="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,7 +35,7 @@ export const Layout = (data: LayoutArgument) => {
                     <script defer={s.defer} src={s.src}></script>
                 ))}
             </head>
-            <body>{data.children}</body>
+            <body class={data.class}>{data.children}</body>
         </html>
     );
 };
