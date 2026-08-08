@@ -72,6 +72,7 @@ export class ChatService {
 
             const latestMessage = await db
                 .select({
+                    userId: messages.userId,
                     content: messages.content,
                     createdAt: messages.createdAt,
                 })
@@ -87,7 +88,11 @@ export class ChatService {
                 opponentId,
                 opponentName,
                 lastMessage: latestMessage[0]
-                    ? { content: latestMessage[0].content, createdAt: latestMessage[0].createdAt }
+                    ? {
+                          sender: latestMessage[0].userId,
+                          content: latestMessage[0].content,
+                          createdAt: latestMessage[0].createdAt,
+                      }
                     : null,
             });
         }

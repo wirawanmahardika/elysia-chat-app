@@ -1,11 +1,9 @@
 import { Elysia } from 'elysia';
-import { html } from '@elysiajs/html';
 import { authService } from './service';
 import { loginBodySchema, registerBodySchema } from './model';
 import { LoginPage, RegisterView } from './views';
 
 export const authModule = new Elysia({ prefix: '/auth' })
-    .use(html())
     .get('/login', () => LoginPage())
     .post(
         '/login',

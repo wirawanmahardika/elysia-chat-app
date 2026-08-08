@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { html } from '@elysiajs/html';
 import { authService } from '../auth/service';
 import { chatService } from './service';
 import { ChatPage, ChatPanel, ChatPartial } from './views';
@@ -13,7 +12,6 @@ interface WSClientState {
 const states = new Map<string, WSClientState>();
 
 export const chatModule = new Elysia()
-    .use(html())
     .get('/', async ({ redirect, cookie: { session } }) => {
         try {
             if (!session.value) {
@@ -29,18 +27,9 @@ export const chatModule = new Elysia()
             const userRooms = await chatService.getUserRooms(user.id);
             const availableUsers = await chatService.getAllOtherUsers(user.id);
 
-            if (userRooms.length > 0) {
-                const activeRoomId = userRooms[0].id;
-                return ChatPage({
-                    userRooms,
-                    currentUsername: user.username,
-                    availableUsers,
-                });
-            }
-
             return ChatPage({
-                userRooms: [],
                 currentUsername: user.username,
+                userRooms,
                 availableUsers,
             });
         } catch (error) {

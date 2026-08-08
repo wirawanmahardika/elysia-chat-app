@@ -17,6 +17,7 @@ export const roomWithDetailsSchema = t.Object({
     opponentName: t.Nullable(t.String()),
     lastMessage: t.Nullable(
         t.Object({
+            sender: t.String(),
             content: t.String(),
             createdAt: t.Date(),
         })

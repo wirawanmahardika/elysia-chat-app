@@ -4,7 +4,6 @@ import { Layout, Scripts } from '../../shared/views/layout';
 
 interface ChatPageProps {
     userRooms: RoomWithDetails[];
-    // messages: MessageWithUser[];
     currentUsername: string;
     availableUsers: { id: string; username: string }[];
 }
@@ -136,7 +135,11 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
                                                         x-bind:class={`activeRoomId === '${room.id}' ? 'text-primary-content/80' : 'text-base-content/60'`}
                                                         class="text-xs truncate mt-0.5 text-left"
                                                     >
-                                                        {lastMsg}
+                                                        {room.lastMessage?.sender ===
+                                                        room.opponentId
+                                                            ? room.opponentName
+                                                            : 'You'}
+                                                        : {lastMsg}
                                                     </p>
                                                 </div>
                                             </div>
