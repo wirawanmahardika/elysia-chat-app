@@ -5,7 +5,7 @@ export const LoginPage = () => {
     return (
         <Layout
             title="Register"
-            script={{ htmx: true }}
+            script={{ htmx: true, alpine: true }}
             class="bg-base-300 min-h-screen antialiased"
         >
             <div class="flex min-h-screen items-center justify-center p-4">
@@ -35,11 +35,15 @@ export const LoginPage = () => {
                             </p>
                         </div>
 
+                        {/* Alert Error (Jika ada error dari backend/props) */}
+                        <div class="alert alert-error text-sm py-2 shadow-sm empty:hidden"></div>
+
                         {/* Form Login HTMX */}
                         <form
                             hx-post="/auth/login"
-                            hx-target=".toast"
+                            hx-target=".alert.alert-error"
                             hx-swap="innerHTML"
+                            hx-on--before-request="htmx.find('.alert.alert-error').innerHTML = ''"
                             class="flex flex-col gap-y-3"
                         >
                             {/* Username Field */}
@@ -131,7 +135,7 @@ export const LoginPage = () => {
     );
 };
 
-export const RegisterView = ({ error }: { error?: string } = {}) => {
+export const RegisterView = () => {
     return (
         <Layout
             title="Register"
@@ -166,31 +170,15 @@ export const RegisterView = ({ error }: { error?: string } = {}) => {
                         </div>
 
                         {/* Alert Error (Jika ada error dari backend/props) */}
-                        {error && (
-                            <div class="alert alert-error text-sm py-2 shadow-sm">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5 shrink-0 stroke-current"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                                <span>{error}</span>
-                            </div>
-                        )}
+                        <div class="alert alert-error text-sm py-2 shadow-sm empty:hidden"></div>
 
                         {/* Form Register HTMX */}
                         <form
                             hx-post="/auth/register"
-                            hx-target=".toast"
+                            hx-target=".alert.alert-error"
                             hx-swap="innerHTML"
                             class="flex flex-col gap-y-3"
+                            hx-on--before-request="htmx.find('.alert.alert-error').innerHTML = ''"
                         >
                             {/* Username Field */}
                             <div class="form-control">
@@ -283,9 +271,27 @@ export const RegisterView = ({ error }: { error?: string } = {}) => {
                     </div>
                 </div>
             </div>
-
-            {/* Container Toast untuk HTMX Response */}
-            <div class="toast toast-top toast-center z-50"></div>
         </Layout>
+    );
+};
+
+export const AuthResponseError = (msg: string) => {
+    return (
+        <>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+            </svg>
+            <span>{msg}</span>
+        </>
     );
 };

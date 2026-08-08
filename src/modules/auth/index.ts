@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { authService } from './service';
 import { loginBodySchema, registerBodySchema } from './model';
-import { LoginPage, RegisterView } from './views';
+import { LoginPage, RegisterView, AuthResponseError } from './views';
 
 export const authModule = new Elysia({ prefix: '/auth' })
     .get('/login', () => LoginPage())
@@ -22,9 +22,7 @@ export const authModule = new Elysia({ prefix: '/auth' })
                 });
                 set.headers['HX-Redirect'] = '/';
             } catch (error: any) {
-                return `<div class="alert alert-error">
-                    <span>${error.message || error}</span>
-                </div>`;
+                return AuthResponseError(error?.message || 'Terjadi kesalahan');
             }
         },
         {
@@ -40,9 +38,7 @@ export const authModule = new Elysia({ prefix: '/auth' })
                 await authService.register({ username, password });
                 set.headers['HX-Redirect'] = '/auth/login';
             } catch (error: any) {
-                return `<div class="alert alert-error">
-                    <span>${error.message || error}</span>
-                </div>`;
+                return AuthResponseError(error?.message || 'Terjadi kesalahan');
             }
         },
         {

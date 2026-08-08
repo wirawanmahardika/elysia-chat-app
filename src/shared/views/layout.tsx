@@ -15,7 +15,7 @@ export interface Scripts {
 interface LayoutArgs {
     title: string;
     script?: Scripts;
-    class: string;
+    class?: string;
     children: any;
 }
 
