@@ -38,7 +38,7 @@ export const chatModule = new Elysia()
     })
     .post(
         '/direct',
-        async ({ body, redirect, set, headers, cookie: { session } }) => {
+        async ({ body, redirect, cookie: { session } }) => {
             if (!session.value) {
                 return redirect('/auth/login');
             }
@@ -53,15 +53,8 @@ export const chatModule = new Elysia()
             if (!targetUserId || targetUserId === user.id) {
                 return redirect('/');
             }
-
-            const roomId = await chatService.getOrCreateDirectRoom(user.id, targetUserId);
-
-            if (headers['hx-request']) {
-                set.headers['HX-Redirect'] = `/room/${roomId}`;
-                return;
-            }
-
-            return redirect(`/room/${roomId}`);
+            await chatService.getOrCreateDirectRoom(user.id, targetUserId);
+            return redirect('/');
         },
         {
             body: t.Object({
@@ -121,6 +114,12 @@ export const chatModule = new Elysia()
                     return;
                 }
 
+                if (!beforeDate) {
+                    set.headers['HX-Retarget'] = '#message-loader-btn';
+                    set.headers['HX-Reswap'] = 'innerHTML';
+                    return 'Tidak ada lagi pesan';
+                }
+
                 const msgs = await chatService.getPreviousMessages(roomId, beforeDate);
                 if (msgs.length <= 0) {
                     set.headers['HX-Retarget'] = '#message-loader-btn';
@@ -134,7 +133,7 @@ export const chatModule = new Elysia()
         },
         {
             params: t.Object({ roomId: t.String() }),
-            query: t.Object({ beforeDate: t.Date() }),
+            query: t.Optional(t.Object({ beforeDate: t.Date() })),
         }
     )
     .ws('/ws', {

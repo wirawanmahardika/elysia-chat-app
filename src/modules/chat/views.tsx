@@ -114,7 +114,6 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
                                             hx-get={`/room/${room.id}`}
                                             hx-target="#chat-panel"
                                             hx-swap="outerHTML"
-                                            hx-on-htmx-after-request="scrollToBottom()"
                                             x-on:click={`activeRoomId = '${room.id}'`}
                                             x-bind:class={`activeRoomId === '${room.id}' ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-base-200 text-base-content'`}
                                             class="flex items-center gap-3 p-3 rounded-xl transition w-full"
@@ -302,6 +301,7 @@ export const ChatPanel = ({
     return (
         <div
             id={'chat-panel'}
+            hx-on-htmx-after-settle="scrollToBottom()"
             class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full empty:hidden fixed md:static"
         >
             {/* Chat Header */}
@@ -354,7 +354,8 @@ export const ChatPanel = ({
                 <div id={'message-loader'} class={'w-full grid place-items-center'}>
                     <button
                         id="message-loader-btn"
-                        class={'btn btn-info btn-dash btn-xs md:btn-md'}
+                        x-init={`$el.disabled = ${messages.length > 0 ? 'false' : 'true'}`}
+                        class="btn btn-info btn-dash btn-xs md:btn-md"
                         hx-get={`/messages/${room.id}`}
                         hx-target="#message-loader"
                         hx-swap="afterend"
@@ -363,7 +364,9 @@ export const ChatPanel = ({
                             event.detail.parameters['beforeDate'] = beforeDate
                         "
                     >
-                        Lihat percakapan sebelumnya
+                        {messages.length > 0
+                            ? 'Lihat percakapan sebelumnya'
+                            : 'Tidak ada lagi pesan'}
                     </button>
                 </div>
                 {messages
