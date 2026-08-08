@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { authService } from '../auth/service';
 import { chatService } from './service';
-import { ChatPage, ChatPanel, ChatPartial } from './views';
+import { ChatPage, ChatPanel, ChatPartial, Chats } from './views';
 import type { User } from '../auth/model';
 
 interface WSClientState {
@@ -89,7 +89,7 @@ export const chatModule = new Elysia()
                 return;
             }
 
-            const initialMessages = await chatService.getRoomHistory(roomId, 20);
+            const initialMessages = await chatService.getRoomHistory(roomId, 10);
             const roomAndOpponent = await chatService.getRoomAndOpponent(roomId, user.id);
 
             return ChatPanel({
@@ -105,6 +105,38 @@ export const chatModule = new Elysia()
             return new Response(null, { status: 500 });
         }
     })
+    .get(
+        '/messages/:roomId',
+        async ({ params: { roomId }, query: { beforeDate }, set, cookie: { session } }) => {
+            try {
+                if (!session.value) {
+                    set.headers['HX-Redirect'] = '/auth/login';
+                    return;
+                }
+
+                const user = await authService.validateSession(session.value as string);
+                if (!user) {
+                    session.remove();
+                    set.headers['HX-Redirect'] = '/auth/login';
+                    return;
+                }
+
+                const msgs = await chatService.getPreviousMessages(roomId, beforeDate);
+                if (msgs.length <= 0) {
+                    set.headers['HX-Retarget'] = '#message-loader-btn';
+                    set.headers['HX-Reswap'] = 'innerHTML';
+                    return 'Tidak ada lagi pesan';
+                }
+                return Chats(user.id, msgs);
+            } catch (error) {
+                return new Response(null, { status: 500 });
+            }
+        },
+        {
+            params: t.Object({ roomId: t.String() }),
+            query: t.Object({ beforeDate: t.Date() }),
+        }
+    )
     .ws('/ws', {
         async beforeHandle({ cookie: { session } }) {
             const sessionId = session.value as string;
@@ -144,22 +176,6 @@ export const chatModule = new Elysia()
             const user = clientState.user;
 
             switch (data.type) {
-                case 'room':
-                    const initialMessages = await chatService.getRoomHistory(roomId, 50);
-                    const roomAndOpponent = await chatService.getRoomAndOpponent(roomId, user.id);
-
-                    const roomResponse = ChatPanel({
-                        messages: initialMessages,
-                        username: user.username,
-                        room: {
-                            id: roomAndOpponent?.id || '',
-                            name: roomAndOpponent?.name || '',
-                            opponentName: roomAndOpponent?.opponentName || '',
-                        },
-                    });
-
-                    ws.send(roomResponse);
-                    break;
                 case 'chatting':
                     if (!roomId || !message) return;
                     const isMember = await chatService.isUserInRoom(user.id, roomId);

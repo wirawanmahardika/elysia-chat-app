@@ -30,16 +30,18 @@ export const rooms = sqliteTable('rooms', {
         .default(sql`(strftime('%s', 'now'))`),
 });
 
-export const roomMembers = sqliteTable('room_members', {
-    roomId: text('room_id')
-        .notNull()
-        .references(() => rooms.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-        .notNull()
-        .references(() => users.id, { onDelete: 'cascade' }),
-}, (table) => [
-    primaryKey({ columns: [table.roomId, table.userId] })
-]);
+export const roomMembers = sqliteTable(
+    'room_members',
+    {
+        roomId: text('room_id')
+            .notNull()
+            .references(() => rooms.id, { onDelete: 'cascade' }),
+        userId: text('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+    },
+    (table) => [primaryKey({ columns: [table.roomId, table.userId] })]
+);
 
 export const messages = sqliteTable('messages', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),

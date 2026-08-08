@@ -258,6 +258,34 @@ export const ChatPartial = (
     );
 };
 
+export const Chats = (
+    userId: string,
+    messages: { senderId: string; sender: string; content: string; createdAt: Date }[]
+) => {
+    return (
+        <>
+            {messages.map((m) => {
+                const isSelf = m.senderId === userId;
+                return (
+                    <div
+                        class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}
+                        data-created-at={m.createdAt.toISOString()}
+                    >
+                        <div class="chat-header text-xs opacity-70 mb-1">{m.sender}</div>
+                        <div
+                            class={`chat-bubble max-w-[80%] ${
+                                isSelf ? 'chat-bubble-primary' : 'chat-bubble-neutral'
+                            }`}
+                        >
+                            {m.content}
+                        </div>
+                    </div>
+                );
+            })}
+        </>
+    );
+};
+
 export const ChatPanel = ({
     username,
     messages,
@@ -323,13 +351,31 @@ export const ChatPanel = ({
                 class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/40"
                 chat-window
             >
+                <div id={'message-loader'} class={'w-full grid place-items-center'}>
+                    <button
+                        id="message-loader-btn"
+                        class={'btn btn-info btn-dash btn-xs md:btn-md'}
+                        hx-get={`/messages/${room.id}`}
+                        hx-target="#message-loader"
+                        hx-swap="afterend"
+                        hx-on-htmx-config-request="
+                            const beforeDate = htmx.find('#message-loader').nextElementSibling.dataset.createdAt
+                            event.detail.parameters['beforeDate'] = beforeDate
+                        "
+                    >
+                        Lihat percakapan sebelumnya
+                    </button>
+                </div>
                 {messages
                     .slice()
                     .reverse()
                     .map((m) => {
                         const isSelf = m.username === username;
                         return (
-                            <div class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}>
+                            <div
+                                data-created-at={m.createdAt}
+                                class={`chat ${isSelf ? 'chat-end' : 'chat-start'}`}
+                            >
                                 <div class="chat-header text-xs opacity-70 mb-1">{m.username}</div>
                                 <div
                                     class={`chat-bubble max-w-[80%] ${

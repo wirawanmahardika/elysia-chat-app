@@ -204,6 +204,21 @@ export class ChatService {
 
         return result;
     }
+
+    async getPreviousMessages(roomId: string, beforeDate: Date, limit: number = 20) {
+        return await db
+            .select({
+                senderId: messages.userId,
+                sender: users.username,
+                content: messages.content,
+                createdAt: messages.createdAt,
+            })
+            .from(messages)
+            .innerJoin(users, eq(users.id, messages.userId))
+            .where(and(eq(messages.roomId, roomId), lt(messages.createdAt, beforeDate)))
+            .orderBy(desc(messages.createdAt))
+            .limit(limit);
+    }
 }
 
 export const chatService = new ChatService();
