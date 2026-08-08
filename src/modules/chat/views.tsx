@@ -111,8 +111,10 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
 
                                     return (
                                         <button
-                                            ws-send
-                                            hx-vals={`{"type": "room", "roomId": "${room.id}"}`}
+                                            hx-get={`/room/${room.id}`}
+                                            hx-target="#chat-panel"
+                                            hx-swap="outerHTML"
+                                            hx-on-htmx-after-request="scrollToBottom()"
                                             x-on:click={`activeRoomId = '${room.id}'`}
                                             x-bind:class={`activeRoomId === '${room.id}' ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-base-200 text-base-content'`}
                                             class="flex items-center gap-3 p-3 rounded-xl transition w-full"
@@ -137,9 +139,9 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
                                                     >
                                                         {room.lastMessage?.sender ===
                                                         room.opponentId
-                                                            ? room.opponentName
-                                                            : 'You'}
-                                                        : {lastMsg}
+                                                            ? room.opponentName + ': '
+                                                            : room.lastMessage?.content && 'You: '}
+                                                        {lastMsg}
                                                     </p>
                                                 </div>
                                             </div>

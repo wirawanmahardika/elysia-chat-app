@@ -36,35 +36,6 @@ export const chatModule = new Elysia()
             return new Response(null, { status: 500 });
         }
     })
-    .get('/room/:roomId', async ({ params: { roomId }, redirect, cookie: { session } }) => {
-        try {
-            if (!session.value) {
-                return redirect('/auth/login');
-            }
-
-            const user = await authService.validateSession(session.value as string);
-            if (!user) {
-                session.remove();
-                return redirect('/auth/login');
-            }
-
-            const isMember = await chatService.isUserInRoom(user.id, roomId);
-            if (!isMember) {
-                return redirect('/');
-            }
-
-            const userRooms = await chatService.getUserRooms(user.id);
-            const availableUsers = await chatService.getAllOtherUsers(user.id);
-
-            return ChatPage({
-                userRooms,
-                currentUsername: user.username,
-                availableUsers,
-            });
-        } catch (error) {
-            return new Response(null, { status: 500 });
-        }
-    })
     .post(
         '/direct',
         async ({ body, redirect, set, headers, cookie: { session } }) => {
@@ -98,6 +69,42 @@ export const chatModule = new Elysia()
             }),
         }
     )
+    .get('/room/:roomId', async ({ params: { roomId }, set, cookie: { session } }) => {
+        try {
+            if (!session.value) {
+                set.headers['HX-Redirect'] = '/auth/login';
+                return;
+            }
+
+            const user = await authService.validateSession(session.value as string);
+            if (!user) {
+                session.remove();
+                set.headers['HX-Redirect'] = '/auth/login';
+                return;
+            }
+
+            const isMember = await chatService.isUserInRoom(user.id, roomId);
+            if (!isMember) {
+                set.headers['HX-Redirect'] = '/';
+                return;
+            }
+
+            const initialMessages = await chatService.getRoomHistory(roomId, 20);
+            const roomAndOpponent = await chatService.getRoomAndOpponent(roomId, user.id);
+
+            return ChatPanel({
+                messages: initialMessages,
+                username: user.username,
+                room: {
+                    id: roomAndOpponent?.id || '',
+                    name: roomAndOpponent?.name || '',
+                    opponentName: roomAndOpponent?.opponentName || '',
+                },
+            });
+        } catch (error) {
+            return new Response(null, { status: 500 });
+        }
+    })
     .ws('/ws', {
         async beforeHandle({ cookie: { session } }) {
             const sessionId = session.value as string;
