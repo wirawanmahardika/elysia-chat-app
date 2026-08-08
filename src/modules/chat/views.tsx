@@ -13,7 +13,7 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
         alpine: true,
         htmx: true,
         htmxWebSocket: true,
-        customScript: [{ src: '/public/js/chatPage.js', defer: true }],
+        customScript: [{ src: '/public/js/chat-page.js', defer: true }],
     };
 
     return (
@@ -114,6 +114,7 @@ export const ChatPage = ({ userRooms, currentUsername, availableUsers }: ChatPag
                                             hx-get={`/room/${room.id}`}
                                             hx-target="#chat-panel"
                                             hx-swap="outerHTML"
+                                            hx-on-htmx-after-request="scrollToBottom()"
                                             x-on:click={`activeRoomId = '${room.id}'`}
                                             x-bind:class={`activeRoomId === '${room.id}' ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-base-200 text-base-content'`}
                                             class="flex items-center gap-3 p-3 rounded-xl transition w-full"
@@ -263,7 +264,7 @@ export const Chats = (
 ) => {
     return (
         <>
-            {messages.map((m) => {
+            {messages.reverse().map((m) => {
                 const isSelf = m.senderId === userId;
                 return (
                     <div
@@ -301,7 +302,7 @@ export const ChatPanel = ({
     return (
         <div
             id={'chat-panel'}
-            hx-on-htmx-after-settle="scrollToBottom()"
+            x-ref="chatPanel"
             class="flex-1 flex flex-col h-full bg-base-100 overflow-hidden w-full empty:hidden fixed md:static"
         >
             {/* Chat Header */}
@@ -309,7 +310,7 @@ export const ChatPanel = ({
                 <div class="flex items-center gap-3">
                     {/* Back Button for Mobile */}
                     <button
-                        x-on:click="document.getElementById('chat-panel').innerHTML = ''"
+                        x-on:click="$refs.chatPanel.innerHTML = ''"
                         class="btn btn-ghost btn-circle btn-sm md:hidden"
                         aria-label="Kembali ke daftar percakapan"
                     >

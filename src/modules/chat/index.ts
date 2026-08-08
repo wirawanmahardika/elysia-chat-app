@@ -120,7 +120,7 @@ export const chatModule = new Elysia()
                     return 'Tidak ada lagi pesan';
                 }
 
-                const msgs = await chatService.getPreviousMessages(roomId, beforeDate);
+                const msgs = await chatService.getPreviousMessages(roomId, beforeDate, 10);
                 if (msgs.length <= 0) {
                     set.headers['HX-Retarget'] = '#message-loader-btn';
                     set.headers['HX-Reswap'] = 'innerHTML';

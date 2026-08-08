@@ -205,7 +205,7 @@ export class ChatService {
         return result;
     }
 
-    async getPreviousMessages(roomId: string, beforeDate: Date, limit: number = 20) {
+    async getPreviousMessages(roomId: string, beforeDate: Date, limit: number) {
         return await db
             .select({
                 senderId: messages.userId,
