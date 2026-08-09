@@ -12,18 +12,21 @@ interface WSClientState {
 const states = new Map<string, WSClientState>();
 
 export const chatModule = new Elysia()
-    .get('/', async ({ redirect, cookie: { session } }) => {
+    .resolve(async ({ cookie: { session } }) => {
+        if (!session.value) {
+            session.remove();
+            return { user: null };
+        }
+        const user = await authService.validateSession(session.value as string);
+        if (!user) {
+            session.remove();
+            return { user: null };
+        }
+        return { user };
+    })
+    .get('/', async ({ redirect, user }) => {
         try {
-            if (!session.value) {
-                return redirect('/auth/login');
-            }
-
-            const user = await authService.validateSession(session.value as string);
-            if (!user) {
-                session.remove();
-                return redirect('/auth/login');
-            }
-
+            if (!user) return redirect('/auth/login');
             const userRooms = await chatService.getUserRooms(user.id);
             const availableUsers = await chatService.getAllOtherUsers(user.id);
 
@@ -38,16 +41,8 @@ export const chatModule = new Elysia()
     })
     .post(
         '/direct',
-        async ({ body, redirect, cookie: { session } }) => {
-            if (!session.value) {
-                return redirect('/auth/login');
-            }
-
-            const user = await authService.validateSession(session.value as string);
-            if (!user) {
-                session.remove();
-                return redirect('/auth/login');
-            }
+        async ({ body, redirect, user }) => {
+            if (!user) return redirect('/auth/login');
 
             const { targetUserId } = body;
             if (!targetUserId || targetUserId === user.id) {
@@ -62,16 +57,9 @@ export const chatModule = new Elysia()
             }),
         }
     )
-    .get('/room/:roomId', async ({ params: { roomId }, set, cookie: { session } }) => {
+    .get('/room/:roomId', async ({ params: { roomId }, set, user }) => {
         try {
-            if (!session.value) {
-                set.headers['HX-Redirect'] = '/auth/login';
-                return;
-            }
-
-            const user = await authService.validateSession(session.value as string);
             if (!user) {
-                session.remove();
                 set.headers['HX-Redirect'] = '/auth/login';
                 return;
             }
@@ -100,16 +88,9 @@ export const chatModule = new Elysia()
     })
     .get(
         '/messages/:roomId',
-        async ({ params: { roomId }, query: { beforeDate }, set, cookie: { session } }) => {
+        async ({ params: { roomId }, query: { beforeDate }, set, user }) => {
             try {
-                if (!session.value) {
-                    set.headers['HX-Redirect'] = '/auth/login';
-                    return;
-                }
-
-                const user = await authService.validateSession(session.value as string);
                 if (!user) {
-                    session.remove();
                     set.headers['HX-Redirect'] = '/auth/login';
                     return;
                 }
@@ -137,20 +118,8 @@ export const chatModule = new Elysia()
         }
     )
     .ws('/ws', {
-        async beforeHandle({ cookie: { session } }) {
-            const sessionId = session.value as string;
-            if (!sessionId) {
-                return new Response(null, { status: 404 });
-            }
-
-            const user = await authService.validateSession(sessionId);
-            if (!user) {
-                return new Response(null, { status: 404 });
-            }
-        },
         async open(ws) {
-            const sessionId = ws.data.cookie.session.value as string;
-            const user = await authService.validateSession(sessionId);
+            const user = ws.data.user;
             if (!user) return;
 
             // Auto-subscribe to all rooms the user is a member of so they can receive updates
@@ -170,12 +139,12 @@ export const chatModule = new Elysia()
             const clientState = states.get(ws.id);
             if (!clientState) return;
 
-            const roomId = data?.roomId;
-            const message = data?.message;
-            const user = clientState.user;
-
             switch (data.type) {
                 case 'chatting':
+                    const roomId = data?.roomId;
+                    const message = data?.message;
+                    const user = clientState.user;
+
                     if (!roomId || !message) return;
                     const isMember = await chatService.isUserInRoom(user.id, roomId);
                     if (!isMember) return;
