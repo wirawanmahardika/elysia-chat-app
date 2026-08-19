@@ -1,11 +1,14 @@
 import { randomBytes } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { db, users, sessions } from '../../shared/db';
+import { db, usersTable, sessionsTable } from '../../shared/db';
 import type { RegisterBody, LoginBody, User, Session } from './model';
 
 export class AuthService {
     async register(dto: RegisterBody): Promise<User> {
-        const existingUsers = await db.select().from(users).where(eq(users.username, dto.username));
+        const existingUsers = await db
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.username, dto.username));
         if (existingUsers.length > 0) {
             throw new Error('Username already exists');
         }
@@ -18,12 +21,15 @@ export class AuthService {
             createdAt: new Date(),
         };
 
-        await db.insert(users).values(user);
+        await db.insert(usersTable).values(user);
         return user;
     }
 
     async login(dto: LoginBody): Promise<Session> {
-        const foundUsers = await db.select().from(users).where(eq(users.username, dto.username));
+        const foundUsers = await db
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.username, dto.username));
         const user = foundUsers[0];
         if (!user) {
             throw new Error('Invalid username or password');
@@ -43,32 +49,38 @@ export class AuthService {
             expiresAt,
         };
 
-        await db.insert(sessions).values(session);
+        await db.insert(sessionsTable).values(session);
         return session;
     }
 
     async validateSession(sessionId: string): Promise<User | null> {
-        const foundSessions = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+        const foundSessions = await db
+            .select()
+            .from(sessionsTable)
+            .where(eq(sessionsTable.id, sessionId));
         const session = foundSessions[0];
         if (!session) {
             return null;
         }
 
         if (session.expiresAt.getTime() < Date.now()) {
-            await db.delete(sessions).where(eq(sessions.id, sessionId));
+            await db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
             return null;
         }
 
-        const foundUsers = await db.select().from(users).where(eq(users.id, session.userId));
+        const foundUsers = await db
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.id, session.userId));
         return foundUsers[0] || null;
     }
 
     async logout(sessionId: string): Promise<void> {
-        await db.delete(sessions).where(eq(sessions.id, sessionId));
+        await db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
     }
 
     async getUserById(id: string): Promise<User | null> {
-        const foundUsers = await db.select().from(users).where(eq(users.id, id));
+        const foundUsers = await db.select().from(usersTable).where(eq(usersTable.id, id));
         return foundUsers[0] || null;
     }
 }

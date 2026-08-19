@@ -44,3 +44,4 @@ package-lock.json
 
 storage/*
 public/style.css
+tmp

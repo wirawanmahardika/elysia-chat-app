@@ -1,21 +1,23 @@
 import { desc, lt, eq, and, ne } from 'drizzle-orm';
-import { db, messages, users, rooms, roomMembers } from '../../shared/db';
+import { db, messagesTable, usersTable, roomsTable, roomMembersTable } from '../../shared/db';
 import type { Message, MessageWithUser, RoomWithDetails } from './model';
 
 export class ChatService {
     async getOrCreateDirectRoom(userAId: string, userBId: string): Promise<string> {
         // Find existing direct rooms where userA is a member
         const userARooms = await db
-            .select({ roomId: roomMembers.roomId })
-            .from(roomMembers)
-            .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
-            .where(and(eq(roomMembers.userId, userAId), eq(rooms.type, 'direct')));
+            .select({ roomId: roomMembersTable.roomId })
+            .from(roomMembersTable)
+            .innerJoin(roomsTable, eq(roomMembersTable.roomId, roomsTable.id))
+            .where(and(eq(roomMembersTable.userId, userAId), eq(roomsTable.type, 'direct')));
 
         for (const r of userARooms) {
             const hasUserB = await db
                 .select()
-                .from(roomMembers)
-                .where(and(eq(roomMembers.roomId, r.roomId), eq(roomMembers.userId, userBId)));
+                .from(roomMembersTable)
+                .where(
+                    and(eq(roomMembersTable.roomId, r.roomId), eq(roomMembersTable.userId, userBId))
+                );
             if (hasUserB.length > 0) {
                 return r.roomId;
             }
@@ -23,12 +25,12 @@ export class ChatService {
 
         // Create new direct room if none exists
         const newRoomId = crypto.randomUUID();
-        await db.insert(rooms).values({
+        await db.insert(roomsTable).values({
             id: newRoomId,
             type: 'direct',
         });
 
-        await db.insert(roomMembers).values([
+        await db.insert(roomMembersTable).values([
             { roomId: newRoomId, userId: userAId },
             { roomId: newRoomId, userId: userBId },
         ]);
@@ -39,14 +41,14 @@ export class ChatService {
     async getUserRooms(userId: string): Promise<RoomWithDetails[]> {
         const userRooms = await db
             .select({
-                id: rooms.id,
-                name: rooms.name,
-                type: rooms.type,
-                createdAt: rooms.createdAt,
+                id: roomsTable.id,
+                name: roomsTable.name,
+                type: roomsTable.type,
+                createdAt: roomsTable.createdAt,
             })
-            .from(roomMembers)
-            .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
-            .where(eq(roomMembers.userId, userId));
+            .from(roomMembersTable)
+            .innerJoin(roomsTable, eq(roomMembersTable.roomId, roomsTable.id))
+            .where(eq(roomMembersTable.userId, userId));
 
         const result: RoomWithDetails[] = [];
 
@@ -57,12 +59,17 @@ export class ChatService {
             if (room.type === 'direct') {
                 const opponents = await db
                     .select({
-                        id: users.id,
-                        username: users.username,
+                        id: usersTable.id,
+                        username: usersTable.username,
                     })
-                    .from(roomMembers)
-                    .innerJoin(users, eq(roomMembers.userId, users.id))
-                    .where(and(eq(roomMembers.roomId, room.id), ne(roomMembers.userId, userId)));
+                    .from(roomMembersTable)
+                    .innerJoin(usersTable, eq(roomMembersTable.userId, usersTable.id))
+                    .where(
+                        and(
+                            eq(roomMembersTable.roomId, room.id),
+                            ne(roomMembersTable.userId, userId)
+                        )
+                    );
 
                 if (opponents.length > 0) {
                     opponentId = opponents[0].id;
@@ -72,13 +79,13 @@ export class ChatService {
 
             const latestMessage = await db
                 .select({
-                    userId: messages.userId,
-                    content: messages.content,
-                    createdAt: messages.createdAt,
+                    userId: messagesTable.userId,
+                    content: messagesTable.content,
+                    createdAt: messagesTable.createdAt,
                 })
-                .from(messages)
-                .where(eq(messages.roomId, room.id))
-                .orderBy(desc(messages.id))
+                .from(messagesTable)
+                .where(eq(messagesTable.roomId, room.id))
+                .orderBy(desc(messagesTable.id))
                 .limit(1);
 
             result.push({
@@ -114,21 +121,23 @@ export class ChatService {
     ): Promise<MessageWithUser[]> {
         let query = db
             .select({
-                id: messages.id,
-                roomId: messages.roomId,
-                userId: messages.userId,
-                content: messages.content,
-                createdAt: messages.createdAt,
-                username: users.username,
+                id: messagesTable.id,
+                roomId: messagesTable.roomId,
+                userId: messagesTable.userId,
+                content: messagesTable.content,
+                createdAt: messagesTable.createdAt,
+                username: usersTable.username,
             })
-            .from(messages)
-            .innerJoin(users, eq(messages.userId, users.id))
-            .orderBy(desc(messages.id));
+            .from(messagesTable)
+            .innerJoin(usersTable, eq(messagesTable.userId, usersTable.id))
+            .orderBy(desc(messagesTable.id));
 
         if (cursorId !== undefined) {
-            query = query.where(and(eq(messages.roomId, roomId), lt(messages.id, cursorId))) as any;
+            query = query.where(
+                and(eq(messagesTable.roomId, roomId), lt(messagesTable.id, cursorId))
+            ) as any;
         } else {
-            query = query.where(eq(messages.roomId, roomId)) as any;
+            query = query.where(eq(messagesTable.roomId, roomId)) as any;
         }
 
         const results = await query.limit(limit);
@@ -149,18 +158,18 @@ export class ChatService {
         content: string;
     }): Promise<Message> {
         const result = await db
-            .insert(messages)
+            .insert(messagesTable)
             .values({
                 roomId: data.roomId,
                 userId: data.userId,
                 content: data.content,
             })
             .returning({
-                id: messages.id,
-                roomId: messages.roomId,
-                userId: messages.userId,
-                content: messages.content,
-                createdAt: messages.createdAt,
+                id: messagesTable.id,
+                roomId: messagesTable.roomId,
+                userId: messagesTable.userId,
+                content: messagesTable.content,
+                createdAt: messagesTable.createdAt,
             });
 
         return result[0];
@@ -169,33 +178,33 @@ export class ChatService {
     async isUserInRoom(userId: string, roomId: string): Promise<boolean> {
         const members = await db
             .select()
-            .from(roomMembers)
-            .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)));
+            .from(roomMembersTable)
+            .where(and(eq(roomMembersTable.roomId, roomId), eq(roomMembersTable.userId, userId)));
         return members.length > 0;
     }
 
     async getAllOtherUsers(currentUserId: string): Promise<{ id: string; username: string }[]> {
         return await db
             .select({
-                id: users.id,
-                username: users.username,
+                id: usersTable.id,
+                username: usersTable.username,
             })
-            .from(users)
-            .where(ne(users.id, currentUserId))
-            .orderBy(users.username);
+            .from(usersTable)
+            .where(ne(usersTable.id, currentUserId))
+            .orderBy(usersTable.username);
     }
 
     async getRoomAndOpponent(roomId: string, userId: string) {
         const [result] = await db
             .select({
-                id: rooms.id,
-                name: rooms.name,
-                opponentName: users.username,
+                id: roomsTable.id,
+                name: roomsTable.name,
+                opponentName: usersTable.username,
             })
-            .from(rooms)
-            .innerJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
-            .innerJoin(users, eq(users.id, roomMembers.userId))
-            .where(and(eq(rooms.id, roomId), ne(users.id, userId)))
+            .from(roomsTable)
+            .innerJoin(roomMembersTable, eq(roomMembersTable.roomId, roomsTable.id))
+            .innerJoin(usersTable, eq(usersTable.id, roomMembersTable.userId))
+            .where(and(eq(roomsTable.id, roomId), ne(usersTable.id, userId)))
             .limit(1);
 
         if (!result) {
@@ -208,15 +217,15 @@ export class ChatService {
     async getPreviousMessages(roomId: string, beforeDate: Date, limit: number) {
         return await db
             .select({
-                senderId: messages.userId,
-                sender: users.username,
-                content: messages.content,
-                createdAt: messages.createdAt,
+                senderId: messagesTable.userId,
+                sender: usersTable.username,
+                content: messagesTable.content,
+                createdAt: messagesTable.createdAt,
             })
-            .from(messages)
-            .innerJoin(users, eq(users.id, messages.userId))
-            .where(and(eq(messages.roomId, roomId), lt(messages.createdAt, beforeDate)))
-            .orderBy(desc(messages.createdAt))
+            .from(messagesTable)
+            .innerJoin(usersTable, eq(usersTable.id, messagesTable.userId))
+            .where(and(eq(messagesTable.roomId, roomId), lt(messagesTable.createdAt, beforeDate)))
+            .orderBy(desc(messagesTable.createdAt))
             .limit(limit);
     }
 }
