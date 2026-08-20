@@ -17,7 +17,7 @@ export const sessionsTable = sqliteTable('sessions', {
     id: text('id').primaryKey(),
     userId: text('user_id')
         .notNull()
-        .references(() => usersTable.id, { onDelete: 'cascade' }),
+        .references(() => usersTable.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -38,7 +38,7 @@ export const roomMembersTable = sqliteTable(
             .references(() => roomsTable.id, { onDelete: 'cascade' }),
         userId: text('user_id')
             .notNull()
-            .references(() => usersTable.id, { onDelete: 'cascade' }),
+            .references(() => usersTable.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     },
     (table) => [primaryKey({ columns: [table.roomId, table.userId] })]
 );
@@ -50,7 +50,7 @@ export const messagesTable = sqliteTable('messages', {
         .references(() => roomsTable.id, { onDelete: 'cascade' }),
     userId: text('user_id')
         .notNull()
-        .references(() => usersTable.id, { onDelete: 'cascade' }),
+        .references(() => usersTable.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     content: text('content').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' })
         .notNull()

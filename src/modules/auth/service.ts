@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { eq } from 'drizzle-orm';
 import { db, usersTable, sessionsTable } from '../../shared/db';
 import type { RegisterBody, LoginBody, User, Session } from './model';
+import { idGenerator6Digit } from '../../shared/idGenerator';
 
 export class AuthService {
     async register(dto: RegisterBody): Promise<User> {
@@ -13,9 +14,10 @@ export class AuthService {
             throw new Error('Username already exists');
         }
 
+        const countUser = await db.$count(usersTable);
         const passwordHash = await Bun.password.hash(dto.password);
         const user: User = {
-            id: crypto.randomUUID(),
+            id: idGenerator6Digit.generateId(countUser),
             username: dto.username,
             passwordHash,
             createdAt: new Date(),
